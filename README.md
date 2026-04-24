@@ -40,6 +40,52 @@ AI, sistemde bir **"Bilgi Tercümanı"** ve **"İçerik Tasarımcısı"** olarak
 - [ ] **Frontend:** Streamlit ile kullanıcı dostu arayüz tasarımı.
 - [ ] **Engine:** OpenAI Vision (Görsel okuma) ve GPT-4 (Anlamsal analiz) entegrasyonu.
 - [ ] **Output:** ReportLab/FPDF ile otomatik PDF üretimi.
+- [ ] **Ürün Gereksinim Belgesi (PRD) - Versiyon 1.1**
+
+## 🎯 1. Proje Vizyonu
+BridgeAI, fiziksel dünyadaki pasif ve karmaşık bilgiyi (eski kitaplar, teknik kılavuzlar) modern yapay zeka ile işleyerek; kişiselleştirilmiş, dijital ve aksiyona dönüştürülebilir içerikler üreten bir **akıllı bilgi köprüsü**dür.
+
+---
+
+## 👥 2. Kullanıcı Hikayeleri (User Stories)
+* **Eğitimci:** "Elimdeki basılı materyalin fotoğrafını çekip, 11. sınıf öğrencilerimin seviyesine uygun bir quiz'i saniyeler içinde almak istiyorum."
+* **Endüstriyel Tekniker:** "Karmaşık bir İSG dökümanını taratıp, sahada uygulayabileceğim basit bir 'adım adım kontrol listesi' oluşturmak istiyorum."
+
+---
+
+## 🛠 3. Fonksiyonel Gereksinimler & Ekranlar
+
+### 🟢 Ekran 1: Giriş ve Yükleme Paneli
+* **Dosya Girişi:** Kullanıcıdan fotoğraf (JPG/PNG) yüklemesi alınması.
+* **Profil Seçimi:** Kullanıcı tipinin belirlenmesi (Eğitimci veya Teknik Personel).
+* **Konfigürasyon:** Hedef çıktı formatının belirlenmesi (Quiz, Özet, Talimat Listesi).
+
+### 🟡 Ekran 2: Analiz Paneli (AI İşleme)
+* **OCR Entegrasyonu:** Görseldeki metnin dijital veriye dönüştürülmesi.
+* **Anlamsal İşleme:** Metnin seçilen profile göre (Örn: A2 seviye İngilizce veya teknik operatör dili) yeniden kurgulanması.
+* **Üretim:** Yapay zekanın "Bilgi Tercümanı" olarak yeni ve özgün içerik oluşturması.
+
+### 🔴 Ekran 3: Çıktı ve İndirme Paneli
+* **Önizleme:** Üretilen içeriğin kullanıcıya gösterilmesi.
+* **Dışa Aktarma:** İçeriğin profesyonel bir PDF dosyası olarak indirilmesi.
+
+---
+
+## 💻 4. Teknik Teknoloji Yığını (Tech Stack)
+| Katman | Teknoloji | Görev |
+| :--- | :--- | :--- |
+| **Arayüz (Frontend)** | Streamlit | Hızlı ve kullanıcı dostu web arayüzü. |
+| **Zeka (AI Engine)** | OpenAI GPT-4o (Vision) | Görsel okuma, anlamsal analiz ve içerik üretimi. |
+| **Dosya Üretimi** | FPDF / ReportLab | Dinamik PDF döküman oluşturma. |
+
+---
+
+## 🚀 5. Başarı Kriterleri & MVP Hedefleri
+- [ ] Fotoğraflardaki metinlerin %95+ doğrulukla okunması.
+- [ ] Seçilen profile göre dil seviyesinin başarıyla ayarlanması.
+- [ ] **Hedef Tarih:** 14 Mayıs'ta çalışan bir demo sunumu.
+
+---
 
 ---
 *Bu dosya BridgeAI proje geliştirme sürecini takip etmek amacıyla oluşturulmuştur.*
