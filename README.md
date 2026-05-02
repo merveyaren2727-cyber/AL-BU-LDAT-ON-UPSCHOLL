@@ -270,14 +270,4 @@ pip install streamlit google-generativeai fpdf2 pillow
 *Bu teknoloji seçimi, 14 Mayıs hedefi için "Minimum Kod, Maksimum Sonuç" prensibiyle yapılmıştır.*
 ---
 
-## 📦 Kurulum Komutları
-
-```bash
-pip install streamlit google-generativeai fpdf2 pillow
-```
-
----
-*Bu teknoloji seçimi, 14 Mayıs hedefi için "Minimum Kod, Maksimum Sonuç" prensibiyle yapılmıştır.*
-
----
 *Bu döküman BridgeAI projesinin geliştirme anayasasıdır.*
