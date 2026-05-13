@@ -19,7 +19,7 @@ except ImportError:
     Image = None
 
 # --- AI YAPILANDIRMASI ---
-genai.configure(api_key="AIzaSyD5yoDFLTl5iV8_TIx5MKWi7E6O6uOnGJA")
+genai.configure(api_key="AIzaSyD7ksD5j2xXj0g-mvRiMacH2sXmWCQHBZI")
 ai_model = genai.GenerativeModel(
     model_name='gemini-2.0-flash',
     system_instruction="Sen Bridge-AI asistanısın. Merve Yılmaz tarafından geliştirildin. Analizlerinde profesyonel bir mühendis ve samimi bir öğretmen gibi davran."
@@ -561,7 +561,6 @@ with col_left:
                 res = get_ai_response("Bu ders materyalini profesyonel bir sunum taslağına dönüştür. Madde madde yaz.", upl)
             st.session_state['view_state'] = 'slide'
             st.session_state['ai_msg'] = res
-            global presentation_points
             presentation_points = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
             go_rerun(True)
         if b2.button("📄 Sınav Üret", use_container_width=True):
@@ -572,7 +571,6 @@ with col_left:
                 res = get_ai_response("Bu ders materyalindeki anahtar kelimeleri ve konuyu 11. sınıf seviyesinde özetle. Hap bilgiler ver.", upl)
             st.session_state['view_state'] = 'vocab'
             st.session_state['ai_msg'] = res
-            global vocab_summary_points
             vocab_summary_points = [line.strip("- ") for line in res.split("\n") if line.strip()][:6]
             go_rerun(True)
         if st.button("✨ Sunum Hazırla (Yedek)", use_container_width=True, key="sunum_yedek"):
@@ -592,7 +590,6 @@ with col_left:
                 st.session_state['view_state'] = 'pdf'
                 st.session_state['q_count'] = cnt
                 st.session_state['ai_msg'] = res
-                global exam_questions
                 exam_questions = [line.strip("- ") for line in res.split("\n") if line.strip()][:cnt]
                 go_rerun(True)
 
@@ -613,7 +610,6 @@ with col_left:
                 res = get_ai_response("Bu saha görseline göre Standart Operasyon Prosedürü (SOP) taslağı oluştur. Adım adım yaz.", upl)
             st.session_state['view_state'] = 'sop'
             st.session_state['ai_msg'] = res
-            global sop_points
             sop_points = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
             go_rerun(True)
 
@@ -675,7 +671,6 @@ with col_left:
                 res = get_ai_response("Bir üretim şirketi için detaylı risk analizi raporu hazırla. Her riski etki seviyesi ve önerilen aksiyonla listele.")
             st.session_state['view_state'] = 'risk_report'
             st.session_state['ai_msg'] = res
-            global risk_points
             risk_points = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
             go_rerun(True)
 
