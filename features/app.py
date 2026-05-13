@@ -27,7 +27,7 @@ except ImportError:
 
 # --- AI YAPILANDIRMASI ---
 # Anahtar repoda tutulmaz. Siralama: ortam GEMINI_API_KEY / GOOGLE_API_KEY,
-# sonra Streamlit secrets (yerelde .streamlit/secrets.toml, Cloud'da App Settings > Secrets).
+# sonra Streamlit secrets. Istege bagli: GEMINI_MODEL (or. gemini-1.5-flash — 2.0-flash kotasi dolunca).
 # Sablon: .streamlit/secrets.toml.example ve .env.example
 def _gemini_api_key() -> str:
     k = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
@@ -45,11 +45,24 @@ def _gemini_api_key() -> str:
     return ""
 
 
+def _gemini_model_name() -> str:
+    m = (os.getenv("GEMINI_MODEL") or "").strip()
+    if m:
+        return m
+    try:
+        sec = st.secrets
+        if "GEMINI_MODEL" in sec:
+            return str(sec["GEMINI_MODEL"]).strip()
+    except Exception:
+        pass
+    return "gemini-2.0-flash"
+
+
 _GEMINI_KEY = _gemini_api_key()
 if _GEMINI_KEY:
     genai.configure(api_key=_GEMINI_KEY)
     ai_model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
+        model_name=_gemini_model_name(),
         system_instruction=(
             "Sen Bridge-AI asistanısın. Merve Yılmaz tarafından geliştirildin. "
             "Analizlerinde profesyonel bir mühendis ve samimi bir öğretmen gibi davran."
@@ -81,7 +94,22 @@ def get_ai_response(prompt: str, image_file=None) -> str:
     except Exception as e:
         return f"AI Hatası: {str(e)}"
 
-# --- 1. PDF MOTORU ---
+
+def _parse_exam_ai_response(res: str, question_count: int) -> tuple[str, list[str]]:
+    """Ilk satirdaki BASLIK: ... konu basligini ayir; soru satirlarini dondur."""
+    lines = [ln.strip().lstrip("-*• ").strip() for ln in res.split("\n") if ln.strip()]
+    title = "SINAV"
+    if lines:
+        first = lines[0]
+        if first.upper().startswith("BASLIK:"):
+            title = first.split(":", 1)[1].strip() or title
+            lines = lines[1:]
+    while lines and lines[0].lower() in ("sorular:", "sorular", "---", "—"):
+        lines = lines[1:]
+    qs = lines[:question_count]
+    return title, qs
+
+
 def _fpdf_latin1_safe(text: str) -> str:
     """FPDF varsayilan fontlari Latin-1 ile calisir; em dash vb. UnicodeEncodeError verir."""
     if not isinstance(text, str):
@@ -637,21 +665,26 @@ with col_left:
             cnt = st.select_slider("Soru Sayısı", options=[5, 10, 15], value=5)
             if st.button("Kutuda Sınavı Oluştur", use_container_width=True):
                 upl = st.session_state.get("edu_u")
-                base = f"Bu ders materyaliyle ilgili {cnt} adet test sorusu ve cevap anahtarı hazırla."
+                base = (
+                    f"Bu ders materyaliyle ilgili {cnt} adet test sorusu uret. "
+                    "Cevap anahtarini sorulardan sonra ayri bir baslik altinda yaz.\n\n"
+                    "KURAL — Baslik: Ilk satir SADECE su formatta olsun (dosya adi, 'ekran goruntusu', "
+                    "tarih veya .png/.jpg yazma; sadece konunun kisa akademik basligi):\n"
+                    "BASLIK: <ornek: Fotosentez ve Hucre Solunumu / 10. Sinif Biyoloji>\n\n"
+                    "Ikinci satir bos kalsin. Sonra her satirda bir soru (numarali olabilir)."
+                )
                 if upl:
                     base += (
-                        " Yuklenen dosyadaki (gorsel veya PDF) icerigi dikkatle incele; her soruyu bu icerige "
-                        "dayandir. Icerik farkli bir konudaysa sorulari o konuya gore uret."
+                        " Yuklenen gorsel veya PDFdeki icerigi incele; sorulari dogrudan bu icerige dayandir."
                     )
                 with st.spinner(f"{cnt} soru hazırlanıyor..."):
                     res = get_ai_response(base, upl)
                 st.session_state['view_state'] = 'pdf'
                 st.session_state['q_count'] = cnt
                 st.session_state['ai_msg'] = res
-                st.session_state["edu_exam_questions"] = [line.strip("- ") for line in res.split("\n") if line.strip()][:cnt]
-                st.session_state["edu_exam_title"] = (
-                    f"SINAV — {upl.name}" if upl else "Bridge-AI Sinavi"
-                )
+                exam_title, exam_qs = _parse_exam_ai_response(res, cnt)
+                st.session_state["edu_exam_questions"] = exam_qs
+                st.session_state["edu_exam_title"] = exam_title
                 go_rerun(True)
 
     elif module == "Saha (Field)":
