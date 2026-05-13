@@ -261,7 +261,24 @@ Bu döküman, BridgeAI projesinde kullanılan teknolojileri, seçim nedenlerini 
 ---
 
 ## 📦 Kurulum Komutları
+# BridgeAI 🌉
 
+**BridgeAI**, operasyonel süreçler ile yapay zekayı birbirine bağlayan, verimlilik odaklı bir yönetim asistanıdır.
+
+## 🚀 Proje Hakkında
+Bu uygulama; eğitim içerikleri oluşturma, saha güvenliği standartlarını belirleme ve ofis yönetimindeki manuel işleri (fatura analizi vb.) otomatize etme amacı taşır. Bir Endüstri Mühendisi bakış açısıyla geliştirilmiştir.
+
+## 🔗 Linkler
+- **Canlı Demo (Yayın):** [BURAYA LOVABLE VEYA STREAMLIT LINKINI YAPIŞTIR]
+- **Tanıtım Videosu:** [BURAYA LOOM VİDEO LINKINI YAPIŞTIR]
+
+## 🛠️ Kullanılan Teknolojiler
+- **Dil:** Python (Streamlit)
+- **AI Modelleri:** Gemini 1.5 Flash
+- **Araçlar:** Cursor, VS Code, Perplexity AI, GitHub Copilot
+
+## 👨‍🏫 Hazırlayan
+**Merve** - Endüstri Mühendisi
 ```bash
 pip install streamlit google-generativeai fpdf2 pillow
 ```
