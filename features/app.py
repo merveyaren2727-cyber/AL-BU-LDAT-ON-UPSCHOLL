@@ -28,6 +28,10 @@ ai_model = genai.GenerativeModel(
 def get_ai_response(prompt: str, image_file=None) -> str:
     try:
         if image_file and Image is not None:
+            try:
+                image_file.seek(0)
+            except (AttributeError, OSError):
+                pass
             img = Image.open(image_file)
             response = ai_model.generate_content([prompt, img])
         else:
@@ -362,43 +366,46 @@ with col_left:
 
         if state == "pdf":
             q_count = st.session_state.get("q_count", 5)
+            qs = st.session_state.get("edu_exam_questions")
+            display_qs = (qs if qs else exam_questions)[:q_count]
+            exam_title = st.session_state.get("edu_exam_title") or "11. SINIF INGILIZCE - MARS SURVIVAL COUNCIL"
             q_html = "".join(
-                [
-                    f"<li style='margin-bottom:10px;'>{html.escape(exam_questions[i % 5])}</li>"
-                    for i in range(q_count)
-                ]
+                [f"<li style='margin-bottom:10px;'>{html.escape(q)}</li>" for q in display_qs]
             )
             render_preview(
                 preview_placeholder,
-                f'<div class="paper-mockup"><center><h3>11. SINIF INGILIZCE - MARS SURVIVAL COUNCIL</h3></center><hr><ol>{q_html}</ol></div>',
+                f'<div class="paper-mockup"><center><h3>{html.escape(exam_title)}</h3></center><hr><ol>{q_html}</ol></div>',
             )
             st.download_button(
                 "📥 Sınavı PDF İndir",
-                create_general_pdf("11. SINIF INGILIZCE - MARS SURVIVAL COUNCIL", exam_questions),
+                create_general_pdf(exam_title, display_qs),
                 "sinav.pdf",
                 "application/pdf",
                 use_container_width=True,
             )
 
         elif state == "slide":
+            slide_pts = st.session_state.get("edu_slide_points") or presentation_points
             slide_html = "".join(
-                [f"<li style='margin-bottom:10px;'>{html.escape(item)}</li>" for item in presentation_points]
+                [f"<li style='margin-bottom:10px;'>{html.escape(item)}</li>" for item in slide_pts]
             )
+            slide_title = st.session_state.get("edu_slide_title") or "MARS SURVIVAL COUNCIL - UNITE SUNUMU"
             render_preview(
                 preview_placeholder,
-                f'<div style="background:#001f3f;color:white;padding:40px;border-radius:10px;width:100%;border-left:12px solid #10B981;"><h3>MARS SURVIVAL COUNCIL - UNITE SUNUMU</h3><hr><ol style="padding-left:20px;">{slide_html}</ol></div>',
+                f'<div style="background:#001f3f;color:white;padding:40px;border-radius:10px;width:100%;border-left:12px solid #10B981;"><h3>{html.escape(slide_title)}</h3><hr><ol style="padding-left:20px;">{slide_html}</ol></div>',
             )
             st.download_button(
                 "📥 Sunumu İndir (.pptx)",
-                create_presentation_pptx("MARS SURVIVAL COUNCIL - UNITE SUNUMU", presentation_points),
+                create_presentation_pptx(slide_title, slide_pts),
                 "sunum.pptx",
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 use_container_width=True,
             )
 
         elif state == "vocab":
+            vocab_pts = st.session_state.get("edu_vocab_points") or vocab_summary_points
             vocab_html = "".join(
-                [f"<li style='margin-bottom:10px;'>{html.escape(item)}</li>" for item in vocab_summary_points]
+                [f"<li style='margin-bottom:10px;'>{html.escape(item)}</li>" for item in vocab_pts]
             )
             render_preview(
                 preview_placeholder,
@@ -406,7 +413,7 @@ with col_left:
             )
             st.download_button(
                 "📥 Kelime Özetini İndir",
-                create_general_pdf("KELIME BANKASI - OZET VE HAP BILGILER", vocab_summary_points),
+                create_general_pdf("KELIME BANKASI - OZET VE HAP BILGILER", vocab_pts),
                 "kelime_ozeti.pdf",
                 "application/pdf",
                 use_container_width=True,
@@ -521,28 +528,30 @@ with col_left:
             )
 
         elif state == "sop":
-            sop_html = "".join([f"<li style='margin-bottom:10px;'>{html.escape(item)}</li>" for item in sop_points])
+            sop_pts = st.session_state.get("field_sop_points") or sop_points
+            sop_html = "".join([f"<li style='margin-bottom:10px;'>{html.escape(item)}</li>" for item in sop_pts])
             render_preview(
                 preview_placeholder,
                 f'<div class="paper-mockup"><h3>📝 SOP TASLAGI</h3><hr><ol>{sop_html}</ol></div>',
             )
             st.download_button(
                 "📥 SOP Raporunu İndir",
-                create_general_pdf("SOP TASLAGI", sop_points),
+                create_general_pdf("SOP TASLAGI", sop_pts),
                 "sop_raporu.pdf",
                 "application/pdf",
                 use_container_width=True,
             )
 
         elif state == "risk_report":
-            risk_html = "".join([f"<li style='margin-bottom:10px;'>{html.escape(item)}</li>" for item in risk_points])
+            risk_pts = st.session_state.get("exec_risk_points") or risk_points
+            risk_html = "".join([f"<li style='margin-bottom:10px;'>{html.escape(item)}</li>" for item in risk_pts])
             render_preview(
                 preview_placeholder,
                 f'<div class="paper-mockup" style="border-top:10px solid #ef4444;"><h3>🚨 RISK ANALIZ RAPORU</h3><hr><ol>{risk_html}</ol></div>',
             )
             st.download_button(
                 "📥 Risk Raporunu İndir",
-                create_general_pdf("RISK ANALIZ RAPORU", risk_points),
+                create_general_pdf("RISK ANALIZ RAPORU", risk_pts),
                 "risk_analiz_raporu.pdf",
                 "application/pdf",
                 use_container_width=True,
@@ -561,7 +570,8 @@ with col_left:
                 res = get_ai_response("Bu ders materyalini profesyonel bir sunum taslağına dönüştür. Madde madde yaz.", upl)
             st.session_state['view_state'] = 'slide'
             st.session_state['ai_msg'] = res
-            presentation_points = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
+            st.session_state["edu_slide_points"] = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
+            st.session_state["edu_slide_title"] = (f"SUNUM — {upl.name}" if upl else "MARS SURVIVAL COUNCIL - UNITE SUNUMU")
             go_rerun(True)
         if b2.button("📄 Sınav Üret", use_container_width=True):
             st.session_state['show_slider'] = True
@@ -571,7 +581,7 @@ with col_left:
                 res = get_ai_response("Bu ders materyalindeki anahtar kelimeleri ve konuyu 11. sınıf seviyesinde özetle. Hap bilgiler ver.", upl)
             st.session_state['view_state'] = 'vocab'
             st.session_state['ai_msg'] = res
-            vocab_summary_points = [line.strip("- ") for line in res.split("\n") if line.strip()][:6]
+            st.session_state["edu_vocab_points"] = [line.strip("- ") for line in res.split("\n") if line.strip()][:6]
             go_rerun(True)
         if st.button("✨ Sunum Hazırla (Yedek)", use_container_width=True, key="sunum_yedek"):
             upl = st.session_state.get("edu_u")
@@ -579,18 +589,28 @@ with col_left:
                 res = get_ai_response("Bu ders materyalini profesyonel bir sunum taslağına dönüştür. Madde madde yaz.", upl)
             st.session_state['view_state'] = 'slide'
             st.session_state['ai_msg'] = res
-            presentation_points = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
+            st.session_state["edu_slide_points"] = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
+            st.session_state["edu_slide_title"] = (f"SUNUM — {upl.name}" if upl else "MARS SURVIVAL COUNCIL - UNITE SUNUMU")
             go_rerun(True)
         if st.session_state.get('show_slider'):
             cnt = st.select_slider("Soru Sayısı", options=[5, 10, 15], value=5)
             if st.button("Kutuda Sınavı Oluştur", use_container_width=True):
                 upl = st.session_state.get("edu_u")
+                base = f"Bu ders materyaliyle ilgili {cnt} adet test sorusu ve cevap anahtarı hazırla."
+                if upl:
+                    base += (
+                        " Yuklenen dosyadaki (gorsel veya PDF) icerigi dikkatle incele; her soruyu bu icerige "
+                        "dayandir. Icerik farkli bir konudaysa sorulari o konuya gore uret."
+                    )
                 with st.spinner(f"{cnt} soru hazırlanıyor..."):
-                    res = get_ai_response(f"Bu ders materyaliyle ilgili {cnt} adet test sorusu ve cevap anahtarı hazırla.", upl)
+                    res = get_ai_response(base, upl)
                 st.session_state['view_state'] = 'pdf'
                 st.session_state['q_count'] = cnt
                 st.session_state['ai_msg'] = res
-                exam_questions = [line.strip("- ") for line in res.split("\n") if line.strip()][:cnt]
+                st.session_state["edu_exam_questions"] = [line.strip("- ") for line in res.split("\n") if line.strip()][:cnt]
+                st.session_state["edu_exam_title"] = (
+                    f"SINAV — {upl.name}" if upl else "Bridge-AI Sinavi"
+                )
                 go_rerun(True)
 
     elif module == "Saha (Field)":
@@ -610,7 +630,7 @@ with col_left:
                 res = get_ai_response("Bu saha görseline göre Standart Operasyon Prosedürü (SOP) taslağı oluştur. Adım adım yaz.", upl)
             st.session_state['view_state'] = 'sop'
             st.session_state['ai_msg'] = res
-            sop_points = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
+            st.session_state["field_sop_points"] = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
             go_rerun(True)
 
     elif module == "Ofis & İdari İşler":
@@ -671,7 +691,7 @@ with col_left:
                 res = get_ai_response("Bir üretim şirketi için detaylı risk analizi raporu hazırla. Her riski etki seviyesi ve önerilen aksiyonla listele.")
             st.session_state['view_state'] = 'risk_report'
             st.session_state['ai_msg'] = res
-            risk_points = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
+            st.session_state["exec_risk_points"] = [line.strip("- ") for line in res.split("\n") if line.strip()][:8]
             go_rerun(True)
 
     st.markdown('</div>', unsafe_allow_html=True)
