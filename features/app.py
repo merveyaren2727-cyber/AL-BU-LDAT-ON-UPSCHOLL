@@ -9,6 +9,13 @@ from pptx import Presentation
 import google.generativeai as genai
 
 try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
+try:
     import pandas as pd
 except ImportError:
     pd = None
@@ -19,19 +26,47 @@ except ImportError:
     Image = None
 
 # --- AI YAPILANDIRMASI ---
-# Anahtari kod yerine ortamdan vermek icin: GEMINI_API_KEY veya GOOGLE_API_KEY
-_genai_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "AIzaSyCg4oB4d47N8eKk6BYWFetpqINOn47bzRA"
-genai.configure(api_key=_genai_api_key)
-ai_model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash",
-    system_instruction=(
-        "Sen Bridge-AI asistanısın. Merve Yılmaz tarafından geliştirildin. "
-        "Analizlerinde profesyonel bir mühendis ve samimi bir öğretmen gibi davran."
-    ),
-)
+# Anahtar repoda tutulmaz. Siralama: ortam GEMINI_API_KEY / GOOGLE_API_KEY,
+# sonra Streamlit secrets (yerelde .streamlit/secrets.toml, Cloud'da App Settings > Secrets).
+# Sablon: .streamlit/secrets.toml.example ve .env.example
+def _gemini_api_key() -> str:
+    k = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+    if k:
+        return k
+    try:
+        sec = st.secrets
+        for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
+            if name in sec:
+                v = str(sec[name]).strip()
+                if v:
+                    return v
+    except Exception:
+        pass
+    return ""
+
+
+_GEMINI_KEY = _gemini_api_key()
+if _GEMINI_KEY:
+    genai.configure(api_key=_GEMINI_KEY)
+    ai_model = genai.GenerativeModel(
+        model_name="gemini-2.0-flash",
+        system_instruction=(
+            "Sen Bridge-AI asistanısın. Merve Yılmaz tarafından geliştirildin. "
+            "Analizlerinde profesyonel bir mühendis ve samimi bir öğretmen gibi davran."
+        ),
+    )
+else:
+    ai_model = None
 
 
 def get_ai_response(prompt: str, image_file=None) -> str:
+    if ai_model is None:
+        return (
+            "Gemini API anahtarı yapılandırılmadı. GitHub’a anahtar koymayın. "
+            "Yerelde: ortam değişkeni GEMINI_API_KEY veya proje kökünde "
+            ".streamlit/secrets.toml (gitignore’da). Streamlit Cloud: "
+            "App settings → Secrets."
+        )
     try:
         if image_file and Image is not None:
             try:
