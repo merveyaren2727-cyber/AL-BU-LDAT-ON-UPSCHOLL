@@ -1,7 +1,9 @@
 import html
 import io
 import os
+import re
 import tempfile
+import time
 
 import streamlit as st
 from fpdf import FPDF
@@ -19,26 +21,98 @@ except ImportError:
     Image = None
 
 # --- AI YAPILANDIRMASI ---
-genai.configure(api_key="AIzaSyDFsBr6UYFngMhfddm3Urn52SBlyfXyW1o")
-ai_model = genai.GenerativeModel(
-    model_name='gemini-2.0-flash',
-    system_instruction="Sen Bridge-AI asistanısın. Merve Yılmaz tarafından geliştirildin. Analizlerinde profesyonel bir mühendis ve samimi bir öğretmen gibi davran."
+# Kotayi yonetmek icin: GEMINI_API_KEY / GOOGLE_API_KEY, istege bagli GEMINI_MODEL ve
+# virgulle ayrilmis GEMINI_MODEL_FALLBACKS (or: gemini-2.0-flash-lite,gemini-1.5-flash)
+GEMINI_SYSTEM_INSTRUCTION = (
+    "Sen Bridge-AI asistanısın. Merve Yılmaz tarafından geliştirildin. "
+    "Analizlerinde profesyonel bir mühendis ve samimi bir öğretmen gibi davran."
 )
 
+genai.configure(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "AIzaSyDFsBr6UYFngMhfddm3Urn52SBlyfXyW1o")
+
+
+def _gemini_model_names() -> list[str]:
+    raw = (os.getenv("GEMINI_MODEL_FALLBACKS") or "").strip()
+    if raw:
+        return [p.strip() for p in raw.split(",") if p.strip()]
+    primary = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
+    chain = [primary, "gemini-2.0-flash-lite", "gemini-1.5-flash"]
+    seen: set[str] = set()
+    out: list[str] = []
+    for name in chain:
+        if name and name not in seen:
+            seen.add(name)
+            out.append(name)
+    return out
+
+
+def _quota_retry_sleep_seconds(err: BaseException) -> float | None:
+    m = re.search(r"retry in ([\d.]+)\s*s", str(err), re.I)
+    if not m:
+        return None
+    return float(min(max(float(m.group(1)) + 1.0, 2.0), 90.0))
+
+
+def _is_quota_or_rate_limit(err: BaseException) -> bool:
+    msg = str(err).lower()
+    if "429" in str(err):
+        return True
+    if "quota" in msg or "rate limit" in msg:
+        return True
+    if "resource exhausted" in msg:
+        return True
+    return type(err).__name__ == "ResourceExhausted"
+
+
+def _friendly_quota_message(last_err: BaseException | None) -> str:
+    hint = (
+        "Google Gemini kotasi doldu veya ucretsiz planda bu model icin istek limiti kapalı (limit: 0). "
+        "Yapabileceklerin: (1) https://aistudio.google.com/ veya Cloud Console uzerinden projeye "
+        "faturalama / yeni kota bagla, (2) yeni bir API anahtari ve proje dene, (3) ortam degiskeni "
+        "GEMINI_MODEL ile baska model sec (ornegin gemini-2.0-flash-lite veya gemini-1.5-flash), "
+        "(4) GEMINI_MODEL_FALLBACKS ile virgulle birden fazla model sirala. "
+        "Bir sure sonra tekrar dene."
+    )
+    if last_err:
+        tail = str(last_err).replace("\n", " ")
+        if len(tail) > 400:
+            tail = tail[:400] + "…"
+        return hint + f"\n\nTeknik ozet: {tail}"
+    return hint
+
+
 def get_ai_response(prompt: str, image_file=None) -> str:
-    try:
-        if image_file and Image is not None:
+    last_err: BaseException | None = None
+    for model_name in _gemini_model_names():
+        model = genai.GenerativeModel(
+            model_name=model_name,
+            system_instruction=GEMINI_SYSTEM_INSTRUCTION,
+        )
+        for attempt in range(3):
             try:
-                image_file.seek(0)
-            except (AttributeError, OSError):
-                pass
-            img = Image.open(image_file)
-            response = ai_model.generate_content([prompt, img])
-        else:
-            response = ai_model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        return f"AI Hatası: {str(e)}"
+                if image_file and Image is not None:
+                    try:
+                        image_file.seek(0)
+                    except (AttributeError, OSError):
+                        pass
+                    img = Image.open(image_file)
+                    response = model.generate_content([prompt, img])
+                else:
+                    response = model.generate_content(prompt)
+                text = getattr(response, "text", None) or ""
+                if not text.strip():
+                    return "AI bos veya engellenmis yanit dondu; lutfen tekrar dene."
+                return text
+            except Exception as e:
+                last_err = e
+                if _is_quota_or_rate_limit(e):
+                    wait = _quota_retry_sleep_seconds(e)
+                    if wait is not None and attempt < 2:
+                        time.sleep(wait)
+                        continue
+                    break
+                return f"AI Hatası: {str(e)}"
+    return _friendly_quota_message(last_err)
 
 # --- 1. PDF MOTORU ---
 def _fpdf_latin1_safe(text: str) -> str:
