@@ -20,7 +20,7 @@ except ImportError:
 
 # --- AI YAPILANDIRMASI ---
 # Anahtari kod yerine ortamdan vermek icin: GEMINI_API_KEY veya GOOGLE_API_KEY
-_genai_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "AIzaSyDFsBr6UYFngMhfddm3Urn52SBlyfXyW1o"
+_genai_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "AIzaSyCg4oB4d47N8eKk6BYWFetpqINOn47bzRA"
 genai.configure(api_key=_genai_api_key)
 ai_model = genai.GenerativeModel(
     model_name="gemini-2.0-flash",
