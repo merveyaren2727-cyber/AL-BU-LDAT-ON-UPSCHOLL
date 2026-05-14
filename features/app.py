@@ -1,3 +1,4 @@
+import base64
 import html
 import io
 import os
@@ -320,6 +321,53 @@ def go_rerun(celebrate: bool = False):
     st.rerun()
 
 
+def _optional_app_background_css() -> str:
+    """Sabit arka plan: BRIDGE_BG_IMAGE tam yolu veya script yaninda assets/background.jpg|jpeg|png|webp."""
+    path = (os.getenv("BRIDGE_BG_IMAGE") or "").strip()
+    if not path:
+        base = os.path.dirname(os.path.abspath(__file__))
+        for name in (
+            "background.jpg",
+            "background.jpeg",
+            "background.png",
+            "background.webp",
+        ):
+            cand = os.path.join(base, "assets", name)
+            if os.path.isfile(cand):
+                path = cand
+                break
+    if not path or not os.path.isfile(path):
+        return ""
+    ext = os.path.splitext(path)[1].lower()
+    mime = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+    }.get(ext, "image/jpeg")
+    try:
+        with open(path, "rb") as f:
+            b64 = base64.standard_b64encode(f.read()).decode("ascii")
+    except OSError:
+        return ""
+    return f"""
+    .stApp {{
+        background-image: url("data:{mime};base64,{b64}");
+        background-size: cover;
+        background-position: center center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+    }}
+    .main {{ background-color: transparent !important; }}
+    .main .block-container {{
+        background-color: rgba(248, 249, 250, 0.93);
+        border-radius: 12px;
+        padding-top: 1rem;
+    }}
+    """
+
+
 # --- 2. KURUMSAL TASARIM VE CSS ---
 st.set_page_config(page_title="BRIDGE-AI® Enterprise PRO", layout="wide")
 
@@ -338,10 +386,16 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown("""
+_app_background_css = _optional_app_background_css()
+_main_background_rule = (
+    "    .main { background-color: #f8f9fa; }\n"
+    if not _app_background_css
+    else ""
+)
+st.markdown(
+    f"""
     <style>
-    .main { background-color: #f8f9fa; }
-    [data-testid="stSidebar"] { background-color: #001f3f !important; }
+{_app_background_css}{_main_background_rule}    [data-testid="stSidebar"] { background-color: #001f3f !important; }
     [data-testid="stSidebar"] * { color: white !important; font-weight: 600; }
     
     /* KPI KARTLARI (İşaretlediğin Tasarım) */
@@ -406,7 +460,9 @@ st.markdown("""
     
     .op-card { background-color: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; }
     </style>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
 # --- 3. SIDEBAR ---
 with st.sidebar:
