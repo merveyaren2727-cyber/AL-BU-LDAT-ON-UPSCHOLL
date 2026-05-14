@@ -1,6 +1,7 @@
 import html
 import io
 import os
+import re
 import tempfile
 
 import streamlit as st
@@ -97,19 +98,88 @@ def get_ai_response(prompt: str, image_file=None) -> str:
         return f"AI Hatası: {str(e)}"
 
 
+def _is_likely_exam_question_line(line: str) -> bool:
+    """Giris metnini ele; numarali veya soru isareti iceren satirlari soru say."""
+    t = line.strip()
+    if len(t) < 12:
+        return False
+    tl = t.lower()
+    hints = (
+        "merhaba",
+        "bridge-ai",
+        "merve y",
+        "merve yılmaz",
+        "analiz ettim",
+        "hazırladım",
+        "hazirladim",
+        "mühendis titiz",
+        "muhendis titiz",
+        "öğretmen şefkat",
+        "ogretmen sefkat",
+        "geliştirilen",
+        "gelistirilen",
+        "asistanın",
+        "asistanin",
+        "çalışma sorular",
+        "calisma sorular",
+        "dayalı çalışma",
+        "dayali calisma",
+        "materyali senin için",
+        "keyifli ama dikkat",
+    )
+    if any(h in tl for h in hints):
+        return False
+    if tl.startswith("baslik:"):
+        return False
+    if re.match(r"^\d+[\).]\s*\S", t):
+        return True
+    if t.rstrip().endswith("?"):
+        return True
+    if "?" in t and len(t) < 500:
+        return True
+    return False
+
+
 def _parse_exam_ai_response(res: str, question_count: int) -> tuple[str, list[str]]:
-    """Ilk satirdaki BASLIK: ... konu basligini ayir; soru satirlarini dondur."""
-    lines = [ln.strip().lstrip("-*• ").strip() for ln in res.split("\n") if ln.strip()]
-    title = "SINAV"
-    if lines:
-        first = lines[0]
-        if first.upper().startswith("BASLIK:"):
-            title = first.split(":", 1)[1].strip() or title
-            lines = lines[1:]
-    while lines and lines[0].lower() in ("sorular:", "sorular", "---", "—"):
-        lines = lines[1:]
-    qs = lines[:question_count]
-    return title, qs
+    """BASLIK: (herhangi bir satir), CEVAP ANAHTARI oncesi sorular; giris metni elenir."""
+    m_cut = re.search(
+        r"(?im)^[\s#*_-]*(?:CEVAP\s*ANAHTARI|CEVAP\s*ANAHTAR|ANSWER\s*KEY)\b",
+        res,
+    )
+    work = res[: m_cut.start()].strip() if m_cut else res.strip()
+
+    topic = "Ders Sınavı"
+    work_lines = work.splitlines()
+    body_lines: list[str] = []
+    baslik_re = re.compile(r"^\s*BASLIK\s*:\s*(.+)$", re.IGNORECASE)
+    for raw in work_lines:
+        ln = raw.strip()
+        m = baslik_re.match(ln)
+        if m:
+            cand = m.group(1).strip()
+            if cand:
+                topic = cand
+            continue
+        body_lines.append(raw)
+
+    lines = [ln.strip().lstrip("-*• ").strip() for ln in body_lines if ln.strip()]
+    qs: list[str] = []
+    for ln in lines:
+        if _is_likely_exam_question_line(ln):
+            qs.append(ln)
+            if len(qs) >= question_count:
+                break
+
+    if len(qs) < question_count:
+        for ln in lines:
+            if ln in qs:
+                continue
+            if len(ln) > 35 and not ln.lower().startswith("baslik"):
+                qs.append(ln)
+            if len(qs) >= question_count:
+                break
+
+    return topic, qs[:question_count]
 
 
 def _fpdf_latin1_safe(text: str) -> str:
@@ -439,17 +509,21 @@ with col_left:
             q_count = st.session_state.get("q_count", 5)
             qs = st.session_state.get("edu_exam_questions")
             display_qs = (qs if qs else exam_questions)[:q_count]
-            exam_title = st.session_state.get("edu_exam_title") or "11. SINIF INGILIZCE - MARS SURVIVAL COUNCIL"
+            exam_topic = st.session_state.get("edu_exam_topic") or st.session_state.get("edu_exam_title") or "Ders Sınavı"
             q_html = "".join(
                 [f"<li style='margin-bottom:10px;'>{html.escape(q)}</li>" for q in display_qs]
             )
             render_preview(
                 preview_placeholder,
-                f'<div class="paper-mockup"><center><h3>{html.escape(exam_title)}</h3></center><hr><ol>{q_html}</ol></div>',
+                '<div class="paper-mockup">'
+                f'<h2 style="text-align:center;margin:0 0 6px 0;color:#0f172a;font-size:1.35rem;">{html.escape(exam_topic)}</h2>'
+                '<h3 style="text-align:center;margin:0 0 18px 0;color:#64748b;font-size:1.05rem;font-weight:600;">Sınav soruları</h3>'
+                f'<ol style="text-align:left;line-height:1.55;padding-left:1.25rem;">{q_html}</ol>'
+                "</div>",
             )
             st.download_button(
                 "📥 Sınavı PDF İndir",
-                create_general_pdf(exam_title, display_qs),
+                create_general_pdf(exam_topic, display_qs),
                 "sinav.pdf",
                 "application/pdf",
                 use_container_width=True,
@@ -668,12 +742,14 @@ with col_left:
             if st.button("Kutuda Sınavı Oluştur", use_container_width=True):
                 upl = st.session_state.get("edu_u")
                 base = (
-                    f"Bu ders materyaliyle ilgili {cnt} adet test sorusu uret. "
-                    "Cevap anahtarini sorulardan sonra ayri bir baslik altinda yaz.\n\n"
-                    "KURAL — Baslik: Ilk satir SADECE su formatta olsun (dosya adi, 'ekran goruntusu', "
-                    "tarih veya .png/.jpg yazma; sadece konunun kisa akademik basligi):\n"
-                    "BASLIK: <ornek: Fotosentez ve Hucre Solunumu / 10. Sinif Biyoloji>\n\n"
-                    "Ikinci satir bos kalsin. Sonra her satirda bir soru (numarali olabilir)."
+                    f"Bu ders materyaliyle ilgili tam {cnt} adet test sorusu uret. "
+                    "Cevap anahtarini EN SONDA ayri bir baslikla yaz: satir basinda tam olarak "
+                    "'CEVAP ANAHTARI' yaz, altinda cevaplari ver.\n\n"
+                    "KISITLAR: Kendini tanitma, Bridge-AI veya Merve Yilmaz hakkinda paragraf YAZMA; "
+                    "giris veya 'merhaba' metni YAZMA. Ilk anlamli satir mutlaka su formatta olsun "
+                    "(dosya adi yazma):\n"
+                    "BASLIK: <konu / unite, ornek: Wish Clauses / Ingilizce Dilbilgisi>\n\n"
+                    "Hemen ardindan (bir bos satir opsiyonel) numarali sorulari yaz; her soru net ve tek baslik altinda okunur olsun."
                 )
                 if upl:
                     base += (
@@ -684,9 +760,10 @@ with col_left:
                 st.session_state['view_state'] = 'pdf'
                 st.session_state['q_count'] = cnt
                 st.session_state['ai_msg'] = res
-                exam_title, exam_qs = _parse_exam_ai_response(res, cnt)
+                exam_topic, exam_qs = _parse_exam_ai_response(res, cnt)
+                st.session_state["edu_exam_topic"] = exam_topic
+                st.session_state["edu_exam_title"] = exam_topic
                 st.session_state["edu_exam_questions"] = exam_qs
-                st.session_state["edu_exam_title"] = exam_title
                 go_rerun(True)
 
     elif module == "Saha (Field)":
