@@ -28,7 +28,8 @@ except ImportError:
 # --- AI YAPILANDIRMASI ---
 # Anahtar repoda tutulmaz. Siralama: ortam GEMINI_API_KEY / GOOGLE_API_KEY,
 # sonra Streamlit secrets. Istege bagli: GEMINI_MODEL (ornegin gemini-3.1-flash-lite).
-# Varsayilan: gemini-2.5-flash (AI Studio'da RPM/TPM/RPD limiti gorunen modeller icin).
+# Varsayilan: gemini-3.1-flash-lite-preview (cogu ucretsiz planda RPD 500, RPM 15 — Streamlit icin uygun).
+# Daha agir kalite: GEMINI_MODEL=gemini-2.5-flash (RPD genelde 20; dusuk trafikte iyi).
 # Sablon: .streamlit/secrets.toml.example ve .env.example
 def _gemini_api_key() -> str:
     k = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
@@ -56,7 +57,7 @@ def _gemini_model_name() -> str:
             return str(sec["GEMINI_MODEL"]).strip()
     except Exception:
         pass
-    return "gemini-2.5-flash"
+    return "gemini-3.1-flash-lite-preview"
 
 
 _GEMINI_KEY = _gemini_api_key()
