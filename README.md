@@ -274,7 +274,7 @@ Bu uygulama; eğitim içerikleri oluşturma, saha güvenliği standartlarını b
 
 ## 🛠️ Kullanılan Teknolojiler
 - **Dil:** Python (Streamlit)
-- **AI Modelleri:** Gemini 3.1 Flash
+- **AI Modelleri:** Gemini 3.1 Flash lite
 - **Araçlar:** Cursor, VS Code, Perplexity AI, GitHub Copilot
 
 ## 👨‍🏫 Hazırlayan
