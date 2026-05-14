@@ -197,7 +197,7 @@ Bu döküman, BridgeAI projesinde kullanılan teknolojileri, seçim nedenlerini 
 * **Neden:** * HTML, CSS veya JavaScript bilmenize gerek kalmaz.
     * Sadece Python kullanarak "Dosya Yükle", "Seçim Kutusu" ve "Buton" gibi profesyonel görünümlü bileşenler oluşturmanızı sağlar.
 
-### 3. Yapay Zeka Motoru: **Google Gemini 1.5 Flash**
+### 3. Yapay Zeka Motoru: **Google Gemini 3.1 Flash Lite**
 * **Rolü:** Görsel Analiz (OCR), Metin Sadeleştirme ve Profil Adaptasyonu.
 * **Neden:** * **Hız:** "Flash" modeli anlık tepki verir.
     * **Vision Kapasitesi:** Hem fotoğrafı okur hem de içeriği 11. sınıf seviyesine veya saha operatörü diline tek bir hamlede çevirir.
