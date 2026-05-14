@@ -278,7 +278,7 @@ Bu uygulama; eğitim içerikleri oluşturma, saha güvenliği standartlarını b
 - **Araçlar:** Cursor, VS Code, Perplexity AI, GitHub Copilot
 
 ## 👨‍🏫 Hazırlayan
-**Merve** - Endüstri Mühendisi
+**Merve Yılmaz Çiftçi** - Endüstri Mühendisi
 ```bash
 pip install streamlit google-generativeai fpdf2 pillow
 ```
