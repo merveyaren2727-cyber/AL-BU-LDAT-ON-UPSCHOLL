@@ -269,8 +269,8 @@ Bu döküman, BridgeAI projesinde kullanılan teknolojileri, seçim nedenlerini 
 Bu uygulama; eğitim içerikleri oluşturma, saha güvenliği standartlarını belirleme ve ofis yönetimindeki manuel işleri (fatura analizi vb.) otomatize etme amacı taşır. Bir Endüstri Mühendisi bakış açısıyla geliştirilmiştir.
 
 ## 🔗 Linkler
-- **Canlı Demo (Yayın):** [BURAYA LOVABLE VEYA STREAMLIT LINKINI YAPIŞTIR]
-- **Tanıtım Videosu:** [BURAYA LOOM VİDEO LINKINI YAPIŞTIR]
+- **Canlı Demo (Yayın):** [https://al-bu-ldat-on-upscholl-qdgv7uwq8caqcv9zkiusrz.streamlit.app/]
+- **Tanıtım Videosu:** [https://www.loom.com/share/e6e683ea4a8b492eae38f9afd9523665]
 
 ## 🛠️ Kullanılan Teknolojiler
 - **Dil:** Python (Streamlit)
