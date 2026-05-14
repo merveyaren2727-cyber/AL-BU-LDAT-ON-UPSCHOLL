@@ -338,21 +338,53 @@ def _optional_app_background_css() -> str:
                 break
 
     if path.startswith("http://") or path.startswith("https://"):
-        return f"""
-        .stApp {{
-            background-image: url("{path}");
-            background-size: cover;
-            background-position: center center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-        }}
-        .stApp > .main {{ background-color: transparent !important; }}
-        .main .block-container {{
-            background-color: rgba(248, 249, 250, 0.93);
-            border-radius: 12px;
-            padding-top: 1rem;
-        }}
-        """
+        return (
+            ".stApp {"
+            "background-image: url('" + path + "');"
+            "background-size: cover;"
+            "background-position: center center;"
+            "background-attachment: fixed;"
+            "background-repeat: no-repeat;"
+            "}"
+            ".stApp > .main { background-color: transparent !important; }"
+            ".main .block-container {"
+            "background-color: rgba(248, 249, 250, 0.93);"
+            "border-radius: 12px;"
+            "padding-top: 1rem;"
+            "}"
+        )
+
+    if not path or not os.path.isfile(path):
+        return ""
+
+    ext = os.path.splitext(path)[1].lower()
+    mime = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+    }.get(ext, "image/jpeg")
+    try:
+        with open(path, "rb") as f:
+            b64 = base64.standard_b64encode(f.read()).decode("ascii")
+    except OSError:
+        return ""
+    return (
+        ".stApp {"
+        "background-image: url('data:" + mime + ";base64," + b64 + "');"
+        "background-size: cover;"
+        "background-position: center center;"
+        "background-attachment: fixed;"
+        "background-repeat: no-repeat;"
+        "}"
+        ".stApp > .main { background-color: transparent !important; }"
+        ".main .block-container {"
+        "background-color: rgba(248, 249, 250, 0.93);"
+        "border-radius: 12px;"
+        "padding-top: 1rem;"
+        "}"
+    )
 
     if not path or not os.path.isfile(path):
         return ""
