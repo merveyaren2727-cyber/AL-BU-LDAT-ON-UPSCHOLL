@@ -336,8 +336,28 @@ def _optional_app_background_css() -> str:
             if os.path.isfile(cand):
                 path = cand
                 break
-  # URL ise direkt CSS döndür (Streamlit secrets'tan gelen link için)
-if path.startswith("http://") or path.startswith("https://"):
+
+    if path.startswith("http://") or path.startswith("https://"):
+        return f"""
+        .stApp {{
+            background-image: url("{path}");
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }}
+        .stApp > .main {{ background-color: transparent !important; }}
+        .main .block-container {{
+            background-color: rgba(248, 249, 250, 0.93);
+            border-radius: 12px;
+            padding-top: 1rem;
+        }}
+        """
+
+    if not path or not os.path.isfile(path):
+        return ""
+    ext = os.path.splitext(path)[1].lower()
+    ...
     return f"""
     .stApp {{
         background-image: url("{path}");
