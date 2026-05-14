@@ -393,9 +393,13 @@ _main_background_rule = (
     else ""
 )
 st.markdown(
-    f"""
+    """
     <style>
-{_app_background_css}{_main_background_rule}    [data-testid="stSidebar"] { background-color: #001f3f !important; }
+"""
+    + _app_background_css
+    + _main_background_rule
+    + """
+    [data-testid="stSidebar"] { background-color: #001f3f !important; }
     [data-testid="stSidebar"] * { color: white !important; font-weight: 600; }
     
     /* KPI KARTLARI (İşaretlediğin Tasarım) */
